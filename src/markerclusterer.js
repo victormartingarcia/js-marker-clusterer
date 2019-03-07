@@ -36,6 +36,7 @@
  *     'gridSize': (number) The grid size of a cluster in pixels.
  *     'maxZoom': (number) The maximum zoom level that a marker can be part of a
  *                cluster.
+ *     'zIndex': (number)
  *     'zoomOnClick': (boolean) Whether the default behaviour of clicking on a
  *                    cluster is to zoom into it.
  *     'imagePath': (string) The base URL where the images representing
@@ -58,6 +59,7 @@
  *       'textColor': (string) The text color.
  *       'textSize': (number) The text size.
  *       'backgroundPosition': (string) The position of the backgound x, y.
+ *       'opacity': (number).
  * @constructor
  * @extends google.maps.OverlayView
  */
@@ -112,6 +114,12 @@ function MarkerClusterer(map, opt_markers, opt_options) {
      * @private
      */
     this.maxZoom_ = options['maxZoom'] || null;
+
+    /**
+     * @type {?number}
+     * @private
+     */
+    this.zIndex_ = options['zIndex'] || null;
 
     this.styles_ = options['styles'] || [];
 
@@ -800,7 +808,8 @@ function Cluster(markerClusterer) {
     this.clusterIcon_ = new ClusterIcon(
         this,
         markerClusterer.getStyles(),
-        markerClusterer.getGridSize()
+        markerClusterer.getGridSize(),
+        markerClusterer.zIndex_
     );
 }
 
@@ -1006,7 +1015,7 @@ Cluster.prototype.updateIcon = function() {
  * @extends google.maps.OverlayView
  * @ignore
  */
-function ClusterIcon(cluster, styles, opt_padding) {
+function ClusterIcon(cluster, styles, opt_padding, zIndex) {
     cluster.getMarkerClusterer().extend(ClusterIcon, google.maps.OverlayView);
 
     this.styles_ = styles;
@@ -1017,6 +1026,7 @@ function ClusterIcon(cluster, styles, opt_padding) {
     this.div_ = null;
     this.sums_ = null;
     this.visible_ = false;
+    this.zIndex_ = zIndex;
 
     this.setMap(this.map_);
 }
@@ -1084,7 +1094,8 @@ ClusterIcon.prototype.draw = function() {
         var pos = this.getPosFromLatLng_(this.center_);
         this.div_.style.top = pos.y + 'px';
         this.div_.style.left = pos.x + 'px';
-        this.div_.style.zIndex = google.maps.Marker.MAX_ZINDEX + 1;
+        this.div_.style.zIndex =
+            this.zIndex_ || google.maps.Marker.MAX_ZINDEX + 1;
     }
 };
 
@@ -1251,7 +1262,8 @@ ClusterIcon.prototype.createCss = function(pos) {
             txtSize +
             'px; font-family:Arial,sans-serif; font-weight:bold; ' +
             'opacity:' +
-            opacity
+            opacity +
+            ';z-index:2000;'
     );
     return style.join('');
 };
