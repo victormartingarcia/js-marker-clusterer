@@ -1,6 +1,6 @@
 // ==ClosureCompiler==
 // @compilation_level ADVANCED_OPTIMIZATIONS
-// @externs_url http://closure-compiler.googlecode.com/svn/trunk/contrib/externs/maps/google_maps_api_v3_3.js
+// @externs_url https://raw.githubusercontent.com/google/closure-compiler/master/contrib/externs/maps/google_maps_api_v3_36.js
 // ==/ClosureCompiler==
 
 /**
@@ -121,6 +121,12 @@ function MarkerClusterer(map, opt_markers, opt_options) {
      */
     this.zIndex_ = options['zIndex'] || null;
 
+    /**
+     * @type {?number}
+     * @private
+     */
+    this.fitBoundsPadding_ = options['fitBoundsPadding'] || 0;
+
     this.styles_ = options['styles'] || [];
 
     /**
@@ -166,6 +172,8 @@ function MarkerClusterer(map, opt_markers, opt_options) {
      */
     this.prevZoom_ = this.map_.getZoom();
 
+    this.refresh_ = false;
+
     // Add the map event listeners
     var that = this;
     google.maps.event.addListener(this.map_, 'zoom_changed', function() {
@@ -180,12 +188,17 @@ function MarkerClusterer(map, opt_markers, opt_options) {
 
         if (that.prevZoom_ != zoom) {
             that.prevZoom_ = zoom;
-            that.resetViewport();
+            that.refresh_ = true;
+            //that.resetViewport();
         }
     });
 
     google.maps.event.addListener(this.map_, 'idle', function() {
-        that.redraw();
+        if (that.refresh_) {
+            that.resetViewport();
+            that.redraw();
+            that.refresh_ = false;
+        }
     });
 
     // Finally, add the markers
@@ -809,7 +822,8 @@ function Cluster(markerClusterer) {
         this,
         markerClusterer.getStyles(),
         markerClusterer.getGridSize(),
-        markerClusterer.zIndex_
+        markerClusterer.zIndex_,
+        markerClusterer.fitBoundsPadding_
     );
 }
 
@@ -1015,13 +1029,14 @@ Cluster.prototype.updateIcon = function() {
  * @extends google.maps.OverlayView
  * @ignore
  */
-function ClusterIcon(cluster, styles, opt_padding, zIndex) {
+function ClusterIcon(cluster, styles, opt_padding, zIndex, fitBoundsPadding) {
     cluster.getMarkerClusterer().extend(ClusterIcon, google.maps.OverlayView);
 
     this.styles_ = styles;
     this.padding_ = opt_padding || 0;
     this.cluster_ = cluster;
     this.center_ = null;
+    this.fitBoundsPadding_ = fitBoundsPadding;
     this.map_ = cluster.getMap();
     this.div_ = null;
     this.sums_ = null;
@@ -1038,15 +1053,11 @@ ClusterIcon.prototype.triggerClusterClick = function() {
     var markerClusterer = this.cluster_.getMarkerClusterer();
 
     // Trigger the clusterclick event.
-    google.maps.event.trigger(
-        markerClusterer.map_,
-        'clusterclick',
-        this.cluster_
-    );
+    google.maps.event.trigger(markerClusterer, 'clusterclick', this.cluster_);
 
     if (markerClusterer.isZoomOnClick()) {
         // Zoom into the cluster.
-        this.map_.fitBounds(this.cluster_.getBounds());
+        this.map_.fitBounds(this.cluster_.getBounds(), this.fitBoundsPadding_);
     }
 };
 
