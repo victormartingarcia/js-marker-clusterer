@@ -193,9 +193,9 @@ function MarkerClusterer(map, opt_markers, opt_options) {
         }
     });
 
-    google.maps.event.addListener(this.map_, 'center_changed', function () {
+    /*google.maps.event.addListener(this.map_, 'center_changed', function () {
         that.refresh_ = true;
-    });
+    });*/
 
     google.maps.event.addListener(this.map_, 'idle', function () {
         if (that.refresh_) {
@@ -807,16 +807,17 @@ MarkerClusterer.prototype.createClusters_ = function () {
         return;
     }
 
+    //Procesamos todo el mapa siempre
     // Get our current map view bounds.
     // Create a new bounds object so we don't affect the map.
-    var mapBounds = new google.maps.LatLngBounds(
+    /*var mapBounds = new google.maps.LatLngBounds(
         this.map_.getBounds().getSouthWest(),
         this.map_.getBounds().getNorthEast()
     );
-    var bounds = this.getExtendedBounds(mapBounds);
+    var bounds = this.getExtendedBounds(mapBounds);*/
 
     for (var i = 0, marker; (marker = this.markers_[i]); i++) {
-        if (!marker.isAdded && this.isMarkerInBounds_(marker, bounds)) {
+        if (!marker.isAdded && marker.canBeAdedToCluster_) { //&& this.isMarkerInBounds_(marker, bounds) 
             this.addToClosestCluster_(marker);
         }
     }
