@@ -187,9 +187,10 @@ function MarkerClusterer(map, opt_markers, opt_options) {
         zoom = Math.min(Math.max(zoom, minZoom), maxZoom);
 
         if (that.prevZoom_ != zoom) {
+            if (zoom <= that.maxZoom_ + 1) {
+                that.refresh_ = true;
+            }
             that.prevZoom_ = zoom;
-            that.refresh_ = true;
-            //that.resetViewport();
         }
     });
 
